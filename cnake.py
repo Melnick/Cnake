@@ -1,7 +1,11 @@
-from unicurses import *
 from food import *
+from functions import *
 
 class Cnake():
+
+	HEAD_CH = CCHAR('@');
+	TAIL_CH = CCHAR('+');
+	VOID_CH = CCHAR(' ');
 
 	'''
 	l - left
@@ -28,29 +32,21 @@ class Cnake():
 
 	def move(self):
 		self.body[0] = self.head;
-		self.head = self.add_vector(self.head, self.vector);
+		self.head = add_vector(self.head, self.vector);
 		self.dead_tail = self.body[-1];
 
 		for i in range(len(self.body) - 1, 0, -1):
 			self.body[i] = self.body[i - 1];
 
-		p = mvinch(self.head[0], self.head[1]);
-		if ( p != ord(' ') and chr(p) in Food.foods):
-			food = Food();
-			food.spawn();
-			self.add_body();
-		elif ( p != ord(' ') ):
-			self.dead = True;
+	# def render_cnake(self):
+	# 	for i in range( len(self.body) ):
+	# 		mvaddch(self.body[i][0], self.body[i][1], self.TAIL_CH)
+	# 	mvaddch(self.head[0], self.head[1], self.HEAD_CH)
 
-	def render_cnake(self):
-		for i in range( len(self.body) ):
-			mvaddch(self.body[i][0], self.body[i][1], CCHAR('+'))
-		mvaddch(self.head[0], self.head[1], CCHAR('@'))
-
-
+	# TODO: rework
 	def del_dead_tail(self):
 		if (self.dead_tail not in self.body):
-			mvaddch(self.dead_tail[0], self.dead_tail[1], CCHAR(' '))
+			render( [self.VOID_CH, (self.dead_tail[0], self.dead_tail[1])] );
 
 	def add_body(self):
 		self.body.append(self.body[-1]);
@@ -60,6 +56,6 @@ class Cnake():
 			return True;
 		return False;
 
-	# @staticmethod
-	def add_vector(self, a, b):
-		return (a[0] + b[0], a[1] + b[1]);
+	# # @staticmethod
+	# def add_vector(self, a, b):
+	# 	return (a[0] + b[0], a[1] + b[1]);
