@@ -48,24 +48,25 @@ def game_init():
 	wins["status"]["start_y"] = 0;
 	wins["status"]["start_x"] = 0;
 
-	wins["status"]["win"] = add_win( wins["status"] );
-
-	mvwaddstr(wins["status"]["win"], 0, 4, "Score - 000000" );
-	mvwaddstr(wins["status"]["win"], 1, 4, "Pause - p [no work]" );
-	wrefresh(wins["status"]["win"]);
-
-
 	wins["arena"]["h"] = crs_size["arena"][0];
 	wins["arena"]["w"] = crs_size["arena"][1];
 	wins["arena"]["start_y"] = wins["status"]["h"];
 	wins["arena"]["start_x"] = 0;
 
-	wins["arena"]["win"] = add_win( wins["arena"] );
+	wins["status"]["win"] = add_win( wins["status"] );
+	wins["arena"]["win"]  = add_win( wins["arena"] );
+
+
+	mvwaddstr(wins["status"]["win"], 0, 4, "Score - 000000" );
+	mvwaddstr(wins["status"]["win"], 1, 4, "Pause - p [no work]" );
+	wrefresh(wins["status"]["win"]);
 
 	box(wins["arena"]["win"], 0, 0)
 	wrefresh(wins["arena"]["win"]);
 
+
 	score = game(crs_size, wins, stdscr);
+
 
 	del_win(wins["status"]["win"]);
 	del_win(wins["arena" ]["win"]);
@@ -88,7 +89,7 @@ def game(crs_size, wins, stdscr):
 
 	nodelay(stdscr, True);
 
-	area = [(0, 1), crs_size["arena"]]
+	area = [(0, 1), crs_size["arena"]];
 	start_coords = (2, 2);
 
 	cnake = Cnake( start_coords );
@@ -96,6 +97,8 @@ def game(crs_size, wins, stdscr):
 	food.spawn();
 
 	mvwaddch(wins["arena"]["win"], food.item['y'], food.item['x'], food.item['c']);
+
+	score = 0;
 
 	while ( True ):
 		c = getch();
@@ -113,7 +116,7 @@ def game(crs_size, wins, stdscr):
 			cnake.vector = cnake.direction['b'];
 
 		elif ( c == KEY_ESC ):
-			return 0;
+			return score;
 
 
 
