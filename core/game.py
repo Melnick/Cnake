@@ -12,7 +12,7 @@ KEY_ESC = 27;
 DELAY = 0.1;
 
 '''
-    Score - 000000                                                    @ - 10
+    Score - 00000000                                                  @ - 10
     Pause - p                      GAME OVER
 +------------------------------------------------------------------------------+
 '''
@@ -57,7 +57,7 @@ def game_init():
 	wins["arena"]["win"]  = add_win( wins["arena"] );
 
 
-	mvwaddstr(wins["status"]["win"], 0, 4, "Score - 000000" );
+	mvwaddstr(wins["status"]["win"], 0, 4, "Score - 00000000" );
 	mvwaddstr(wins["status"]["win"], 1, 4, "Pause - p [no work]" );
 	wrefresh(wins["status"]["win"]);
 
@@ -80,7 +80,7 @@ def game_init():
 	wins["gameover"]["win"] = add_win( wins["gameover"] );
 
 	mvwaddstr(wins["gameover"]["win"], 11, 34, "GAME OVER" );
-	mvwaddstr(wins["gameover"]["win"], 13, 30, "U score - {:0>6}".format(score) );
+	mvwaddstr(wins["gameover"]["win"], 13, 30, "U score - {:0>8}".format(score) );
 	mvwaddstr(wins["gameover"]["win"], 20, 20, "Press ESC for quit game or M for game menu." );
 	wrefresh(wins["gameover"]["win"])
 
@@ -158,7 +158,7 @@ def game(crs_size, wins, stdscr):
 		sleep(DELAY)
 
 		score = (len(cnake.body) - 5) * 7;
-		mvwaddstr(wins["status"]["win"], 0, 12, "{:0>6}".format(score));
+		mvwaddstr(wins["status"]["win"], 0, 12, "{:0>8}".format(score));
 		wrefresh(wins["status"]["win"]);
 
 
