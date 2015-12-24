@@ -19,6 +19,7 @@ DELAY = 0.05;
 '''
 
 def game_init():
+	'''Initiating menu, game, all screen'''
 
 	wins = {
 		"menu"    : {},
@@ -120,6 +121,7 @@ def game_init():
 
 
 def game(crs_size, wins, stdscr):
+	'''main frame'''
 
 	nodelay(stdscr, True);
 
