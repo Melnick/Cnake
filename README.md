@@ -6,6 +6,7 @@ Implementation of the well-known game "snake" on Python.
 
 ##install
 (more informations - https://github.com/Melnick/Cnake/wiki)
+
 1. Install unicurses
 2. Install appdirs
 3. install Cnake
