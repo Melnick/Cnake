@@ -9,7 +9,7 @@ from core.food import *
 from core.functions import *
 
 KEY_ESC = 27;
-DELAY = 0.1;
+DELAY = 0.08;
 
 '''
     Score - 00000000                                                  @ - 10
@@ -118,6 +118,19 @@ def game(crs_size, wins, stdscr):
 		elif ( c == KEY_ESC ):
 			return score;
 
+		elif ( c == CCHAR('p') or c == CCHAR('P') ):
+			mvwaddstr(wins["status"]["win"], 1, int(80 / 2 - 3), "PAUSE" );
+			wrefresh(wins["status"]["win"])
+			nodelay(stdscr, False);
+			while ( True ):
+				ch = getch();
+
+				if ( ch == CCHAR('p') ):
+					nodelay(stdscr, True);
+					mvwaddstr(wins["status"]["win"], 1, int(80 / 2 - 3), "     " );
+					wrefresh(wins["status"]["win"])
+					break;
+
 
 
 		cnake.move();
@@ -181,4 +194,5 @@ def game(crs_size, wins, stdscr):
 			wrefresh(wins["arena"]["win"])
 			sleep(0.2)
 
+	nodelay(stdscr, False);
 	return score;
