@@ -7,12 +7,13 @@ from unicurses import *
 from core.cnake import *
 from core.food import *
 from core.functions import *
+from core.interface import *
 
 KEY_ESC = 27;
-DELAY = 0.1;
+DELAY = 0.05;
 
 '''
-    Score - 000000                                                    @ - 10
+    Score - 00000000                                                  @ - 10
     Pause - p                      GAME OVER
 +------------------------------------------------------------------------------+
 '''
@@ -27,12 +28,11 @@ def game_init():
 	};
 	crs_size = {};
 
-
-	stdscr = initscr()
-	cbreak()
-	noecho()
-	curs_set(0)
-	keypad(stdscr, True)
+	stdscr = initscr();
+	cbreak();
+	noecho();
+	curs_set(0);
+	keypad(stdscr, True);
 
 	wrefresh(stdscr);
 
@@ -40,7 +40,7 @@ def game_init():
 	crs_size["stdsrc"] = getmaxyx(stdscr);
 	crs_size["status"] = (2, crs_size["stdsrc"][1]);
 	crs_size["arena"]  = ( crs_size["stdsrc"][0] - crs_size["status"][0]
-		                 , crs_size["stdsrc"][1] )
+		                 , crs_size["stdsrc"][1] );
 
 
 	wins["status"]["h"] = crs_size["status"][0];
@@ -53,43 +53,77 @@ def game_init():
 	wins["arena"]["start_y"] = wins["status"]["h"];
 	wins["arena"]["start_x"] = 0;
 
-	wins["status"]["win"] = add_win( wins["status"] );
-	wins["arena"]["win"]  = add_win( wins["arena"] );
-
-
-	mvwaddstr(wins["status"]["win"], 0, 4, "Score - 000000" );
-	mvwaddstr(wins["status"]["win"], 1, 4, "Pause - p [no work]" );
-	wrefresh(wins["status"]["win"]);
-
-	box(wins["arena"]["win"], 0, 0)
-	wrefresh(wins["arena"]["win"]);
-
-
-	score = game(crs_size, wins, stdscr);
-
-
-	del_win(wins["status"]["win"]);
-	del_win(wins["arena" ]["win"]);
-
-
-	wins["gameover"]["h"] = 25;
+	wins["gameover"]["h"] = crs_size["stdsrc"][0];
 	wins["gameover"]["w"] = crs_size["stdsrc"][1];
 	wins["gameover"]["start_y"] = 0;
 	wins["gameover"]["start_x"] = 0;
 
-	wins["gameover"]["win"] = add_win( wins["gameover"] );
+	wins["menu"]["h"] = crs_size["stdsrc"][0];
+	wins["menu"]["w"] = crs_size["stdsrc"][1];
+	wins["menu"]["start_y"] = 0;
+	wins["menu"]["start_x"] = 0;
 
-	mvwaddstr(wins["gameover"]["win"], 11, 34, "GAME OVER" );
-	mvwaddstr(wins["gameover"]["win"], 13, 30, "U score - {:0>6}".format(score) );
-	mvwaddstr(wins["gameover"]["win"], 20, 20, "Press ESC for quit game or M for game menu." );
-	wrefresh(wins["gameover"]["win"])
+	gameover = False;
+
+	while ( not gameover ):
+
+		gameover = menu( wins );
+
+		if ( not gameover ):
+			wins["status"]["win"] = add_win( wins["status"] );
+			wins["arena"]["win"]  = add_win( wins["arena"] );
+
+
+			mvwaddstr(wins["status"]["win"], 0, 4, "Score - 00000000" );
+			mvwaddstr(wins["status"]["win"], 1, 4, "Pause - p" );
+			wrefresh(wins["status"]["win"]);
+
+			box(wins["arena"]["win"], 0, 0)
+			wrefresh(wins["arena"]["win"]);
+
+
+			score = game(crs_size, wins, stdscr);
+
+
+			del_win(wins["status"]["win"]);
+			del_win(wins["arena" ]["win"]);
+
+			wins["gameover"]["win"] = add_win( wins["gameover"] );
+
+			string = "GAME OVER";
+			x = int(wins["gameover"]["w"] / 2 - len(string) / 2);
+			mvwaddstr(wins["gameover"]["win"], 11, x, string );
+
+			string = "U score - {:0>8}".format(score);
+			x = int(wins["gameover"]["w"] / 2 - len(string) / 2);
+			mvwaddstr(wins["gameover"]["win"], 13, x, string );
+
+			string = "Press ESC for quit game or M for game menu.";
+			x = int(wins["gameover"]["w"] / 2 - len(string) / 2);
+			mvwaddstr(wins["gameover"]["win"], 20, x, string );
+
+			wrefresh(wins["gameover"]["win"])
+
+			while ( True ):
+				c = getch()
+				if ( c == KEY_ESC ):
+					gameover = True;
+					break;
+
+				elif ( c == CCHAR('m') or c == CCHAR('M')):
+					del_win(wins["gameover"]["win"]);
+					break;
+
+	clear();
+	refresh();
+	endwin();
 
 
 def game(crs_size, wins, stdscr):
 
 	nodelay(stdscr, True);
 
-	area = [(0, 1), crs_size["arena"]];
+	area = [(0, 0), crs_size["arena"]];
 	start_coords = (2, 2);
 
 	cnake = Cnake( start_coords );
@@ -118,6 +152,21 @@ def game(crs_size, wins, stdscr):
 		elif ( c == KEY_ESC ):
 			return score;
 
+		elif ( c == CCHAR('p') or c == CCHAR('P') ):
+			string = "PAUSE";
+			x = int(wins["status"]["w"] / 2 - len(string) / 2);
+			mvwaddstr(wins["status"]["win"], 1, x, string );
+			wrefresh(wins["status"]["win"])
+			nodelay(stdscr, False);
+			while ( True ):
+				ch = getch();
+
+				if ( ch == CCHAR('p') ):
+					nodelay(stdscr, True);
+					mvwaddstr(wins["status"]["win"], 1, x, "     " );
+					wrefresh(wins["status"]["win"])
+					break;
+
 
 
 		cnake.move();
@@ -139,7 +188,7 @@ def game(crs_size, wins, stdscr):
 
 		if ( p != ord(' ') and chr(p) in Food.foods):
 
-			for i in range(100000):
+			for i in range(1000):
 				if (chr(mvwinch(wins["arena"]["win"], food.item['y'], food.item['x'])) != ' '):
 					food.spawn();
 				else:
@@ -158,12 +207,14 @@ def game(crs_size, wins, stdscr):
 		sleep(DELAY)
 
 		score = (len(cnake.body) - 5) * 7;
-		mvwaddstr(wins["status"]["win"], 0, 12, "{:0>6}".format(score));
+		mvwaddstr(wins["status"]["win"], 0, 12, "{:0>8}".format(score));
 		wrefresh(wins["status"]["win"]);
 
 
 	if ( cnake.dead ):
-		mvwaddstr(wins["status"]["win"], 1, int(80 / 2 - 5), "GAME OVER" );
+		string = "GAME OVER";
+		x = int(wins["status"]["w"] / 2 - len(string) / 2);
+		mvwaddstr(wins["status"]["win"], 1, x, string );
 		wrefresh(wins["status"]["win"])
 
 		for i in range(6):
@@ -181,4 +232,5 @@ def game(crs_size, wins, stdscr):
 			wrefresh(wins["arena"]["win"])
 			sleep(0.2)
 
+	nodelay(stdscr, False);
 	return score;
