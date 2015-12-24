@@ -52,4 +52,4 @@ def add_win( win ):
 def del_win( win ):
 	wclear(win);
 	wrefresh(win)
-	# delwin(win);
+	delwin(win);
