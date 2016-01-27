@@ -5,12 +5,15 @@ from math import *
 from unicurses import *
 
 from core.cnake import *
+from core.level import *
+from core.score import *
 from core.food import *
+from core.food_spec import *
 from core.functions import *
 from core.interface import *
 
+
 KEY_ESC = 27;
-DELAY = 0.05;
 
 '''
     Score - 00000000                                                  @ - 10
@@ -19,7 +22,6 @@ DELAY = 0.05;
 '''
 
 def game_init():
-	'''Initiating menu, game, all screen'''
 
 	wins = {
 		"menu"    : {},
@@ -38,29 +40,26 @@ def game_init():
 	wrefresh(stdscr);
 
 
-	crs_size["stdsrc"] = getmaxyx(stdscr);
-	crs_size["status"] = (2, crs_size["stdsrc"][1]);
-	crs_size["arena"]  = ( crs_size["stdsrc"][0] - crs_size["status"][0]
-		                 , crs_size["stdsrc"][1] );
+	crs_size = getmaxyx(stdscr);
 
 
-	wins["status"]["h"] = crs_size["status"][0];
-	wins["status"]["w"] = crs_size["status"][1];
+	wins["status"]["h"] = 2;
+	wins["status"]["w"] = crs_size[1];
 	wins["status"]["start_y"] = 0;
 	wins["status"]["start_x"] = 0;
 
-	wins["arena"]["h"] = crs_size["arena"][0];
-	wins["arena"]["w"] = crs_size["arena"][1];
+	wins["arena"]["h"] = 23;
+	wins["arena"]["w"] = crs_size[1];
 	wins["arena"]["start_y"] = wins["status"]["h"];
 	wins["arena"]["start_x"] = 0;
 
-	wins["gameover"]["h"] = crs_size["stdsrc"][0];
-	wins["gameover"]["w"] = crs_size["stdsrc"][1];
+	wins["gameover"]["h"] = crs_size[0];
+	wins["gameover"]["w"] = crs_size[1];
 	wins["gameover"]["start_y"] = 0;
 	wins["gameover"]["start_x"] = 0;
 
-	wins["menu"]["h"] = crs_size["stdsrc"][0];
-	wins["menu"]["w"] = crs_size["stdsrc"][1];
+	wins["menu"]["h"] = crs_size[0];
+	wins["menu"]["w"] = crs_size[1];
 	wins["menu"]["start_y"] = 0;
 	wins["menu"]["start_x"] = 0;
 
@@ -68,7 +67,8 @@ def game_init():
 
 	while ( not gameover ):
 
-		gameover = menu( wins );
+		game_info = menu( wins );
+		gameover = game_info["quit"];
 
 		if ( not gameover ):
 			wins["status"]["win"] = add_win( wins["status"] );
@@ -79,11 +79,15 @@ def game_init():
 			mvwaddstr(wins["status"]["win"], 1, 4, "Pause - p" );
 			wrefresh(wins["status"]["win"]);
 
-			box(wins["arena"]["win"], 0, 0)
+			lvl = Level(game_info["lvl"]);
+
+			for coord in lvl.border:
+				mvwaddstr(wins["arena"]["win"], coord[0], coord[1], ' ', A_REVERSE );
+
 			wrefresh(wins["arena"]["win"]);
 
 
-			score = game(crs_size, wins, stdscr);
+			score = game(wins, stdscr, lvl, game_info);
 
 
 			del_win(wins["status"]["win"]);
@@ -120,21 +124,20 @@ def game_init():
 	endwin();
 
 
-def game(crs_size, wins, stdscr):
-	'''main frame'''
+def game(wins, stdscr, lvl, game_info):
 
 	nodelay(stdscr, True);
 
-	area = [(0, 0), crs_size["arena"]];
 	start_coords = (2, 2);
 
 	cnake = Cnake( start_coords );
-	food = Food( area );
-	food.spawn();
+	food = Food( wins, lvl.border );
+	food.spawn( cnake );
+	food_spec = Food_spec( wins, lvl.border );
 
-	mvwaddch(wins["arena"]["win"], food.item['y'], food.item['x'], food.item['c']);
+	mvwaddch(wins["arena"]["win"], food.coords[0], food.coords[1], food.c);
 
-	score = 0;
+	score = Score(game_info["multiplier"], lvl.multiplier);
 
 	while ( True ):
 		c = getch();
@@ -152,7 +155,7 @@ def game(crs_size, wins, stdscr):
 			cnake.vector = cnake.direction['b'];
 
 		elif ( c == KEY_ESC ):
-			return score;
+			return score.score;
 
 		elif ( c == CCHAR('p') or c == CCHAR('P') ):
 			string = "PAUSE";
@@ -173,6 +176,7 @@ def game(crs_size, wins, stdscr):
 
 		cnake.move();
 
+
 		if (cnake.dead_tail not in cnake.body):
 			mvwaddch(wins["arena"]["win"], cnake.dead_tail[0], cnake.dead_tail[1], CCHAR( cnake.VOID_CH ));
 
@@ -182,34 +186,63 @@ def game(crs_size, wins, stdscr):
 			       , cnake.body[i][1]
 			       , CCHAR( cnake.TAIL_CH ) );
 
-		p = mvwinch(wins["arena"]["win"], cnake.head[0], cnake.head[1]);
 
 		mvwaddch(wins["arena"]["win"],  cnake.head[0]
 		       , cnake.head[1]
 		       , CCHAR( cnake.HEAD_CH ) );
 
-		if ( p != ord(' ') and chr(p) in Food.foods):
 
-			for i in range(1000):
-				if (chr(mvwinch(wins["arena"]["win"], food.item['y'], food.item['x'])) != ' '):
-					food.spawn();
-				else:
-					break;
-
-			mvwaddch(wins["arena"]["win"], food.item['y'], food.item['x'], food.item['c']);
-
-			cnake.add_body();
-
-		elif ( p != ord(' ') ):
+		if (cnake.head in lvl.border or cnake.head in cnake.body):
 			cnake.dead = True;
 			break;
 
-		wrefresh(wins["arena"]["win"])
+		elif (food.coords == cnake.head):
+			score.add(1);
+			food.spawn( cnake );
+			cnake.add_body();
+			if not (food.coords is None):
+				mvwaddch(wins["arena"]["win"], food.coords[0], food.coords[1], food.c);
 
-		sleep(DELAY)
+			if (food_spec.live == False and randint(0, 100) < 20):
+				food_spec.spawn( cnake );
+				if not (food_spec.coords is None):
+					start_color();
+					init_pair(1, food_spec.color, COLOR_BLACK);
+					wattron(wins["arena"]["win"], COLOR_PAIR(1));
+					mvwaddch(wins["arena"]["win"], food_spec.coords[0], food_spec.coords[1], food_spec.c);
+					wattroff(wins["arena"]["win"], COLOR_PAIR(1));
 
-		score = (len(cnake.body) - 5) * 7;
-		mvwaddstr(wins["status"]["win"], 0, 12, "{:0>8}".format(score));
+
+		elif (food_spec.coords == cnake.head):
+			score.add(10, True);
+			cnake.add_body();
+			food_spec.live = False;
+			food_spec.step = 0;
+			mvwaddstr(wins["status"]["win"], 0, 70, "       ");
+
+		if (food_spec.live == True):
+			food_spec.step -= 1;
+
+			s = "{} - {: <3}".format(chr(food_spec.c), food_spec.step);
+
+			start_color();
+			init_pair(1, food_spec.color, COLOR_BLACK);
+			wattron(wins["status"]["win"], COLOR_PAIR(1));
+			mvwaddstr(wins["status"]["win"], 0, 70, s);
+			wattroff(wins["status"]["win"], COLOR_PAIR(1));
+
+			if (food_spec.step == 0):
+				food_spec.live = False;
+				mvwaddstr(wins["status"]["win"], 0, 70, "       ");
+				mvwaddch(wins["arena"]["win"], food_spec.coords[0], food_spec.coords[1], CCHAR(' '));
+				food_spec.coords = None;
+
+
+		wrefresh(wins["arena"]["win"]);
+
+		sleep(game_info["difficulty"]);
+
+		mvwaddstr(wins["status"]["win"], 0, 12, "{:0>8}".format(score.score));
 		wrefresh(wins["status"]["win"]);
 
 
@@ -235,4 +268,4 @@ def game(crs_size, wins, stdscr):
 			sleep(0.2)
 
 	nodelay(stdscr, False);
-	return score;
+	return score.score;

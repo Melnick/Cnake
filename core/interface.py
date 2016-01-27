@@ -4,6 +4,7 @@ from unicurses import *
 KEY_ENTER = 10;
 
 def print_menu(wins, highlight, choices):
+	wclear(wins["menu"]["win"]);
 	n_choices = len(choices);
 	y = int(wins["menu"]["h"] / 2 - n_choices / 2);
 
@@ -23,41 +24,85 @@ def print_menu(wins, highlight, choices):
 
 
 def menu( wins ):
-	gameover = False;
+	game_info = {};
+	game_info["lvl"] = "";
+	game_info["difficulty"] = 1;
+	game_info["multiplier"] = 1;
+	game_info["quit"] = False;
 
 	wins["menu"]["win"] = add_win( wins["menu"] );
 
 	highlight = 1;
-	choice = 0;
-	choices = ["Start game", "Quit"];
-	n_choices = len(choices);
-	print_menu(wins, highlight, choices);
+	step = 0;
 
-	while ( True ):
-		c = getch();
-		if c == KEY_UP:
-			if highlight == 1:
-				highlight = n_choices;
-			else:
-				highlight -= 1;
-		elif c == KEY_DOWN:
-			if highlight == n_choices:
+	while (True):
+		if (step == 0):
+			choices = ["Start game", "Quit"];
+		elif (step == 1):
+			choices = ["Level 1", "Level 2"];
+		elif (step == 2):
+			choices = ["Easy", "Medium", "Hard"];
+
+		n_choices = len(choices)
+
+		while ( True ):
+			choice = "";
+
+			print_menu(wins, highlight, choices);
+
+			c = getch();
+			if c == KEY_UP:
+				if highlight == 1:
+					highlight = n_choices;
+				else:
+					highlight -= 1;
+			elif c == KEY_DOWN:
+				if highlight == n_choices:
+					highlight = 1;
+				else:
+					highlight += 1;
+			elif c == KEY_ENTER:
+				choice = choices[highlight - 1];
+				wrefresh(wins["menu"]["win"]);
+
+
+			if (choice == "Start game"):
 				highlight = 1;
-			else:
-				highlight += 1;
-		elif c == KEY_ENTER:
-			choice = highlight;
-			wrefresh(wins["menu"]["win"]);
+				break;
 
-		print_menu(wins, highlight, choices);
+			elif (choice == "Quit"):
+				game_info["quit"] = True;
+				break;
 
-		if (choice == 1):
+			elif (choice == "Level 1"):
+				highlight = 1;
+				game_info["lvl"] = "lvl_1";
+				break;
+
+			elif (choice == "Level 2"):
+				highlight = 1;
+				game_info["lvl"] = "lvl_2";
+				break;
+
+			elif (choice == "Easy"):
+				game_info["difficulty"] = 0.12;
+				game_info["multiplier"] = 2;
+				break;
+
+			elif (choice == "Medium"):
+				game_info["difficulty"] = 0.08;
+				game_info["multiplier"] = 4;
+				break;
+
+			elif (choice == "Hard"):
+				game_info["difficulty"] = 0.05;
+				game_info["multiplier"] = 6;
+				break;
+
+		if (step == 2 or game_info["quit"] == True):
 			del_win(wins["menu"]["win"]);
-			gameover = False;
-			break;
-		elif (choice == 2):
-			del_win(wins["menu"]["win"]);
-			gameover = True;
 			break;
 
-	return gameover;
+		step += 1;
+
+	return game_info;
