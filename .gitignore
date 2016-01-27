@@ -1,7 +1,7 @@
-curses.h
-panel.h
-pdcurses.lib
-pdcurses.dll
+#curses.h
+#panel.h
+#pdcurses.lib
+#pdcurses.dll
 
 
 
